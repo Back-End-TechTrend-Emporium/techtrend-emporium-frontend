@@ -5,6 +5,16 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react(), tailwind()],
+  server: {
+    // Proxy /api requests to the backend to avoid CORS during development
+    proxy: {
+      "/api": {
+        target: "https://localhost:7101",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@App": path.resolve(__dirname, "src/App"),

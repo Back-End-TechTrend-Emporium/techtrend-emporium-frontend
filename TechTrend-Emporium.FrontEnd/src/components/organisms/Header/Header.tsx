@@ -6,6 +6,8 @@ import ActionIcon from "../../molecules/SearchBar/ActionIcon";
 import SearchBar from "../../molecules/SearchBar";
 import { GuestDropdown, UserDropdown, type UserLike } from "../../molecules/UserDropdown";
 import Button from "../../atoms/Button";
+import { useAuth } from "../../../auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export type HeaderProps = {
   currency?: string;
@@ -18,10 +20,6 @@ export type HeaderProps = {
   onGoToCart?: () => void;
   onGoToWishlist?: () => void;
   onLogoClick?: () => void;
-  onLogout?: () => void;
-  onSignIn?: () => void;
-  onSignUp?: () => void;
-  onGoToPortal?: () => void; // employee/admin portal
 };
 
 const defaultNav: NavItem[] = [
@@ -31,7 +29,6 @@ const defaultNav: NavItem[] = [
 
 export default function Header({
   currency,
-  user,
   cartCount = 0,
   wishlistCount = 0,
   navItems = defaultNav,
@@ -40,64 +37,55 @@ export default function Header({
   onGoToCart,
   onGoToWishlist,
   onLogoClick,
-  onLogout,
-  onSignIn,
-  onSignUp,
-  onGoToPortal,
-}: HeaderProps) {
+}: Partial<HeaderProps>) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Employee/Admin check and label (mock requires "Employee" label)
-  const isEmployee = !!user && (user.role === "employee" || user.role === "admin");
-  const accountLabel = isEmployee ? "Employee" : (user?.name ?? "");
+  const handleSignIn = () => navigate("/login");
+  const handleSignUp = () => navigate("/register");
+  const handleLogout = async () => { await logout(); navigate("/"); };
+  const handlePortal = () => navigate("/employee-portal");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       {/* Utility rails */}
       <CurrencyRail currency={currency} onSelectCurrency={onSelectCurrency} />
       <ShippingBanner />
-
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-center justify-between py-2 md:py-3">
           {/* Left: brand */}
           <BrandLogo onClick={onLogoClick} />
-
           {/* Center: nav */}
           <NavMenu items={navItems} />
-
           {/* Right: controls */}
           <div className="flex items-center gap-3 md:gap-4">
             <ActionIcon name="search" ariaLabel="Search" onClick={() => setShowSearch(v => !v)} />
             <ActionIcon name="heart" ariaLabel="Wishlist" onClick={onGoToWishlist} count={wishlistCount} />
             <ActionIcon name="cart" ariaLabel="Cart" onClick={onGoToCart} count={cartCount} />
-
             {/* Account area */}
             {user ? (
-              isEmployee ? (
-                // Inline Employee/Admin (mock)
+              user.role === "employee" || user.role === "admin" ? (
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-neutral-900">{accountLabel}</span>
+                  <span className="text-sm text-neutral-900">{user.name}</span>
                   <button
                     type="button"
-                    onClick={onLogout}
+                    onClick={handleLogout}
                     className="text-sm underline underline-offset-2 hover:opacity-80"
                   >
                     Logout
                   </button>
-                  <Button size="sm" onClick={onGoToPortal}>
+                  <Button size="sm" onClick={handlePortal}>
                     Employee Portal
                   </Button>
                 </div>
               ) : (
-                // Shopper dropdown
-                <UserDropdown user={user} onLogout={onLogout} onGoToPortal={onGoToPortal} />
+                <UserDropdown user={user} onLogout={handleLogout} onGoToPortal={handlePortal} />
               )
             ) : (
-              // Guest menu
-              <GuestDropdown onSignIn={onSignIn} onSignUp={onSignUp} />
+              <GuestDropdown onSignIn={handleSignIn} onSignUp={handleSignUp} />
             )}
-
             {/* Mobile menu */}
             <button
               type="button"
@@ -110,12 +98,10 @@ export default function Header({
             </button>
           </div>
         </div>
-
         {/* Search bar (full width on md+) */}
         <div className={`pb-3 md:pb-6 ${showSearch ? "block" : "hidden md:block"}`}>
           <SearchBar onSearch={onSearch} />
         </div>
-
         {/* Mobile nav duplication (optional) */}
         <div id="mobile-menu" className={`md:hidden ${mobileOpen ? "block" : "hidden"}`}>
           <nav aria-label="Mobile" className="border-t border-neutral-200 py-3">
