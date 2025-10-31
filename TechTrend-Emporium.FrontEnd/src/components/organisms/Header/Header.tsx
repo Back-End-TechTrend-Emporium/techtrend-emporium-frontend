@@ -1,21 +1,136 @@
-import SearchBar from '@molecules/SearchBar/SearchBar'
+import { useState } from "react";
+import { CurrencyRail, ShippingBanner } from "../../molecules/TopRails";
+import BrandLogo from "../../molecules/BrandLogo";
+import NavMenu, { type NavItem } from "../../molecules/NavMenu";
+import ActionIcon from "../../molecules/SearchBar/ActionIcon";
+import SearchBar from "../../molecules/SearchBar";
+import { GuestDropdown, UserDropdown, type UserLike } from "../../molecules/UserDropdown";
+import Button from "../../atoms/Button";
 
-export default function Header() {
+export type HeaderProps = {
+  currency?: string;
+  user?: UserLike | null;
+  cartCount?: number;
+  wishlistCount?: number;
+  navItems?: NavItem[];
+  onSearch?: (q: string) => void;
+  onSelectCurrency?: () => void;
+  onGoToCart?: () => void;
+  onGoToWishlist?: () => void;
+  onLogoClick?: () => void;
+  onLogout?: () => void;
+  onSignIn?: () => void;
+  onSignUp?: () => void;
+  onGoToPortal?: () => void; // employee/admin portal
+};
+
+const defaultNav: NavItem[] = [
+  { key: "shop-list", label: "Shop List", href: "#shop" },
+  { key: "wishlist", label: "Wishlist", href: "#wishlist" },
+];
+
+export default function Header({
+  currency,
+  user,
+  cartCount = 0,
+  wishlistCount = 0,
+  navItems = defaultNav,
+  onSearch,
+  onSelectCurrency,
+  onGoToCart,
+  onGoToWishlist,
+  onLogoClick,
+  onLogout,
+  onSignIn,
+  onSignUp,
+  onGoToPortal,
+}: HeaderProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Employee/Admin check and label (mock requires "Employee" label)
+  const isEmployee = !!user && (user.role === "employee" || user.role === "admin");
+  const accountLabel = isEmployee ? "Employee" : (user?.name ?? "");
+
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <nav className="flex items-center justify-between">
-          <div className="text-white font-bold text-2xl">TechTrend</div>
-          <div className="flex items-center space-x-6">
-            <SearchBar placeholder="Buscar productos..." />
-            <div className="flex space-x-4">
-              <a href="/" className="text-white hover:text-blue-200 transition-colors">Inicio</a>
-              <a href="/shop" className="text-white hover:text-blue-200 transition-colors">Tienda</a>
-              <a href="/about" className="text-white hover:text-blue-200 transition-colors">Acerca de</a>
-            </div>
+    <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      {/* Utility rails */}
+      <CurrencyRail currency={currency} onSelectCurrency={onSelectCurrency} />
+      <ShippingBanner />
+
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="flex items-center justify-between py-2 md:py-3">
+          {/* Left: brand */}
+          <BrandLogo onClick={onLogoClick} />
+
+          {/* Center: nav */}
+          <NavMenu items={navItems} />
+
+          {/* Right: controls */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <ActionIcon name="search" ariaLabel="Search" onClick={() => setShowSearch(v => !v)} />
+            <ActionIcon name="heart" ariaLabel="Wishlist" onClick={onGoToWishlist} count={wishlistCount} />
+            <ActionIcon name="cart" ariaLabel="Cart" onClick={onGoToCart} count={cartCount} />
+
+            {/* Account area */}
+            {user ? (
+              isEmployee ? (
+                // Inline Employee/Admin (mock)
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-neutral-900">{accountLabel}</span>
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="text-sm underline underline-offset-2 hover:opacity-80"
+                  >
+                    Logout
+                  </button>
+                  <Button size="sm" onClick={onGoToPortal}>
+                    Employee Portal
+                  </Button>
+                </div>
+              ) : (
+                // Shopper dropdown
+                <UserDropdown user={user} onLogout={onLogout} onGoToPortal={onGoToPortal} />
+              )
+            ) : (
+              // Guest menu
+              <GuestDropdown onSignIn={onSignIn} onSignUp={onSignUp} />
+            )}
+
+            {/* Mobile menu */}
+            <button
+              type="button"
+              className="inline-flex items-center rounded-md border border-neutral-200 px-2 py-1 text-sm md:hidden focus:outline-none focus:ring-2 focus:ring-black/20"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+              onClick={() => setMobileOpen(v => !v)}
+            >
+              Menu
+            </button>
           </div>
-        </nav>
+        </div>
+
+        {/* Search bar (full width on md+) */}
+        <div className={`pb-3 md:pb-6 ${showSearch ? "block" : "hidden md:block"}`}>
+          <SearchBar onSearch={onSearch} />
+        </div>
+
+        {/* Mobile nav duplication (optional) */}
+        <div id="mobile-menu" className={`md:hidden ${mobileOpen ? "block" : "hidden"}`}>
+          <nav aria-label="Mobile" className="border-t border-neutral-200 py-3">
+            <ul className="flex flex-col gap-2 text-sm">
+              {navItems.map(n => (
+                <li key={n.key}>
+                  <a href={n.href} className="block rounded-md px-2 py-2 font-medium hover:bg-neutral-100">
+                    {n.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
       </div>
     </header>
-  )
+  );
 }

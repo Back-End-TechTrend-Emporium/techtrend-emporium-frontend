@@ -1,33 +1,33 @@
-import type { ReactNode } from 'react'
+import React from "react";
 
-interface ButtonProps {
-  children: ReactNode
-  onClick?: () => void
-  variant?: 'primary' | 'secondary' | 'outline'
-  size?: 'sm' | 'md' | 'lg'
-}
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "ghost" | "link";
+  size?: "sm" | "md" | "lg";
+};
 
-export default function Button({ children, onClick, variant = 'primary', size = 'md' }: ButtonProps) {
-  const baseClasses = "rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-md hover:shadow-lg"
-  
-  const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-base",
-    lg: "px-6 py-3 text-lg"
-  }
-  
-  const variantClasses = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500",
-    secondary: "bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500",
-    outline: "bg-transparent border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white focus:ring-blue-500"
-  }
+const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
+  sm: "px-2.5 py-1.5 text-sm rounded-md",
+  md: "px-3 py-2 text-sm rounded-lg",
+  lg: "px-4 py-2 text-base rounded-xl",
+};
 
+const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
+  primary:
+    "bg-neutral-900 text-white hover:bg-neutral-800 focus:ring-2 focus:ring-black/20",
+  ghost: "hover:bg-neutral-100 focus:ring-2 focus:ring-black/20",
+  link: "underline underline-offset-2 hover:opacity-80",
+};
+
+export default function Button({
+  variant = "primary",
+  size = "md",
+  className = "",
+  ...rest
+}: ButtonProps) {
   return (
-    <button 
-      className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`} 
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  )
+    <button
+      className={`${sizes[size]} ${variants[variant]} ${className}`}
+      {...rest}
+    />
+  );
 }
