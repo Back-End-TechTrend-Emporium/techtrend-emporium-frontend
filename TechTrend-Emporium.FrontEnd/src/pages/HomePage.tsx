@@ -4,6 +4,7 @@ import LandingPage from "../templates/LandingPage";
 import type { Category } from "../components/molecules/CategoryGrid";
 import type { Product } from "../components/molecules/ProductGrid";
 import { CategoryService } from "../lib/CategoryService";
+import { ProductService } from "../lib/ProductService";
 
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -31,17 +32,46 @@ export default function HomePage() {
 
     fetchCategories();
 
-    // TODO: Replace with real API calls for products
-    setLatest([
-      { id: "4", name: "New Product 1", imageUrl: "https://picsum.photos/400/300?latest1", price: 20 },
-      { id: "5", name: "New Product 2", imageUrl: "https://picsum.photos/400/300?latest2", price: 25 },
-      { id: "6", name: "New Product 3", imageUrl: "https://picsum.photos/400/300?latest3", price: 18 },
-    ]);
-    setBest([
-      { id: "7", name: "Bestseller 1", imageUrl: "https://picsum.photos/400/300?best1", price: 30 },
-      { id: "8", name: "Bestseller 2", imageUrl: "https://picsum.photos/400/300?best2", price: 32 },
-      { id: "9", name: "Bestseller 3", imageUrl: "https://picsum.photos/400/300?best3", price: 29 },
-    ]);
+    // Fetch latest products from API
+    const fetchLatestProducts = async () => {
+      try {
+        const apiProducts = await ProductService.getLatestProducts();
+        // Map API response to component format
+        const mappedProducts = apiProducts.map((product) => ({
+          id: product.id,
+          name: product.title,
+          imageUrl: product.image,
+          price: product.price
+        }));
+        setLatest(mappedProducts);
+      } catch (err) {
+        console.error("Error fetching latest products:", err);
+        // Fallback to empty array
+        setLatest([]);
+      }
+    };
+
+    // Fetch best products from API
+    const fetchBestProducts = async () => {
+      try {
+        const apiProducts = await ProductService.getBestProducts();
+        // Map API response to component format
+        const mappedProducts = apiProducts.map((product) => ({
+          id: product.id,
+          name: product.title,
+          imageUrl: product.image,
+          price: product.price
+        }));
+        setBest(mappedProducts);
+      } catch (err) {
+        console.error("Error fetching best products:", err);
+        // Fallback to empty array
+        setBest([]);
+      }
+    };
+
+    fetchLatestProducts();
+    fetchBestProducts();
   }, []);
 
   return (

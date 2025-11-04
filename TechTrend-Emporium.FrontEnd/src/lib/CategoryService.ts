@@ -2,6 +2,20 @@ import { http } from "./http";
 
 const BASE = "/Test";
 
+export type CategoryCreator = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type CategoryProduct = {
+  id: string;
+  title: string;
+  price: number;
+  category: string;
+  image: string;
+};
+
 export type Category = {
   id: string;
   name: string;
@@ -12,9 +26,9 @@ export type Category = {
   createdAt: string;
   updatedAt: string | null;
   approvedAt: string | null;
-  creator: any | null;
-  approver: any | null;
-  products: any[];
+  creator: CategoryCreator | null;
+  approver: CategoryCreator | null;
+  products: CategoryProduct[];
 };
 
 export const CategoryService = {
