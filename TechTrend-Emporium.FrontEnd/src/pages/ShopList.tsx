@@ -4,6 +4,8 @@ import ProductCard from "../components/molecules/ProductCard";
 import { CategoryService } from "../lib/CategoryService";
 import { StoreService, type ProductItem } from "../lib/StoreService";
 import Button from "../components/atoms/Button/Button";
+import { fuzzyLooksLike } from "../lib/levenshtein";
+import Spinner from "../components/atoms/Spinner/Spinner";
 
 type SortOption = { label: string; sortBy: string; sortDir: "Asc" | "Desc" };
 
@@ -18,6 +20,7 @@ export default function ShopList() {
   const [hasMore, setHasMore] = useState(true);
   const [query, setQuery] = useState("");
   const [searchKey, setSearchKey] = useState(0);
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>({ label: "Title ▲", sortBy: "Title", sortDir: "Asc" });
 
   const sortOptions: SortOption[] = [
@@ -37,6 +40,26 @@ export default function ShopList() {
     window.addEventListener("shop:toggleFilters", onToggle as EventListener);
     return () => window.removeEventListener("shop:toggleFilters", onToggle as EventListener);
   }, []);
+
+  // compute fuzzy suggestion for category when user types
+  useEffect(() => {
+    if (!query || !categories.length) {
+      setSuggestedCategory(null);
+      return;
+    }
+    const lowered = query.toLowerCase().trim();
+    let best: { slug?: string; name: string; score: number } | null = null;
+    for (const c of categories) {
+      const name = c.name || "";
+      const score = fuzzyLooksLike(lowered, name.toLowerCase()) ? 0 : 1; // we'll compute boolean then refine
+      // Use fuzzyLooksLike as coarse filter, then compute ratio
+      if (fuzzyLooksLike(lowered, name.toLowerCase())) {
+        best = { slug: c.slug, name, score: 0 };
+        break;
+      }
+    }
+    setSuggestedCategory(best?.slug ?? null);
+  }, [query, categories]);
 
   const clearFilters = async () => {
     // reset UI state
@@ -166,12 +189,19 @@ export default function ShopList() {
         {/* Main content */}
         <main className="flex-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-1/2 flex items-center gap-2">
-                <SearchBar key={searchKey} onSearch={(q) => setQuery(q)} placeholder="Search products" />
+            <div className="w-1/2 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <SearchBar key={searchKey} onSearch={(q) => setQuery(q)} onChangeDebounced={(q) => setQuery(q)} placeholder="Search products" isLoading={loading} />
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
                   Clear filters
                 </Button>
               </div>
+              {suggestedCategory ? (
+                <div className="text-sm text-neutral-600">
+                  Did you mean category "<button className="underline" onClick={() => { setSelectedCategory(suggestedCategory); }}>{categories.find(c=>c.slug===suggestedCategory)?.name}</button>"?
+                </div>
+              ) : null}
+            </div>
 
             <div className="flex items-center gap-3">
               <label className="sr-only">Sort by</label>
@@ -191,7 +221,7 @@ export default function ShopList() {
 
           <div className="mt-6 text-center">
             {loading ? (
-              <div>Loading...</div>
+              <div className="flex justify-center"><Spinner size={28} /></div>
             ) : hasMore ? (
               <Button onClick={loadMore} variant="ghost">Load more products</Button>
             ) : (
