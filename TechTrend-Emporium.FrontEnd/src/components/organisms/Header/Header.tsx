@@ -7,7 +7,7 @@ import SearchBar from "../../molecules/SearchBar";
 import { GuestDropdown, UserDropdown, type UserLike } from "../../molecules/UserDropdown";
 import Button from "../../atoms/Button";
 import { useAuth } from "../../../auth/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export type HeaderProps = {
   currency?: string;
@@ -23,8 +23,8 @@ export type HeaderProps = {
 };
 
 const defaultNav: NavItem[] = [
-  { key: "shop-list", label: "Shop List", href: "#shop" },
-  { key: "wishlist", label: "Wishlist", href: "#wishlist" },
+  { key: "shop-list", label: "Shop List", href: "/shop" },
+  { key: "wishlist", label: "Wishlist", href: "/wishlist" },
 ];
 
 export default function Header({
@@ -42,6 +42,7 @@ export default function Header({
   const [showSearch, setShowSearch] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignIn = () => navigate("/login");
   const handleSignUp = () => navigate("/register");
@@ -57,8 +58,17 @@ export default function Header({
         <div className="flex items-center justify-between py-2 md:py-3">
           {/* Left: brand */}
           <BrandLogo onClick={onLogoClick} />
-          {/* Center: nav */}
-          <NavMenu items={navItems} />
+          {/* Center: nav or shop variant */}
+          {location.pathname.startsWith("/shop") ? (
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-semibold">Shop</h1>
+              <Button variant="ghost" size="sm" onClick={() => window.dispatchEvent(new CustomEvent('shop:toggleFilters'))}>
+                Filters
+              </Button>
+            </div>
+          ) : (
+            <NavMenu items={navItems} />
+          )}
           {/* Right: controls */}
           <div className="flex items-center gap-3 md:gap-4">
             <ActionIcon name="search" ariaLabel="Search" onClick={() => setShowSearch(v => !v)} />
@@ -81,7 +91,7 @@ export default function Header({
                   </Button>
                 </div>
               ) : (
-                <UserDropdown user={user} onLogout={handleLogout} onGoToPortal={handlePortal} />
+                  <UserDropdown user={user as any} onLogout={handleLogout} onGoToPortal={handlePortal} />
               )
             ) : (
               <GuestDropdown onSignIn={handleSignIn} onSignUp={handleSignUp} />

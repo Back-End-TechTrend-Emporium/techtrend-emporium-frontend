@@ -5,6 +5,7 @@ import Header from "./components/organisms/Header";
 import RequireAuth from "./auth/RequireAuth";
 import RequireRole from "./auth/RequireRole";
 import HomePage from "./pages/HomePage";
+import ShopList from "./pages/ShopList";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+  <Route path="/shop" element={<ShopList />} />
         <Route
           path="/employee-portal"
           element={
