@@ -1,35 +1,123 @@
 // src/App.tsx
-import { AuthProvider } from "./auth/AuthContext";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./components/organisms/Header";
-import RequireAuth from "./auth/RequireAuth";
-import RequireRole from "./auth/RequireRole";
+import type { UserLike } from "./components/molecules/UserDropdown";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import RegisterPage from "./pages/RegisterPage"; // Register screen
 
 export default function App() {
-  // The AuthProvider exposes user and actions via context; App only declares routes and layout.
-  return (
-    <AuthProvider>
-      <Header currency="USD" cartCount={0} wishlistCount={0} />
+  // Global authenticated user (null = guest)
+  const [user, setUser] = useState<UserLike | null>(null);
 
+  // Programmatic navigation helper from react-router
+  const navigate = useNavigate();
+
+  // Rehydrate session from localStorage on first mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const name = (localStorage.getItem("username") || undefined) as string | undefined;
+    const role = localStorage.getItem("role") as UserLike["role"] | null;
+    if (token && name && role) setUser({ id: "u1", name, role });
+  }, []);
+
+  // Header callbacks (search and account/cart actions, mocked for now)
+  const handleSearch = (q: string) => console.log("search:", q);
+
+  // Clear local session and go home
+  const handleLogout = () => {
+    localStorage.clear();
+    setUser(null);
+    navigate("/", { replace: true });
+  };
+
+  // Open login/register flows
+  const handleSignIn = () => navigate("/login");
+  const handlePortal = () => navigate("/employee-portal");
+
+  // Simple stubs for header UI interactions
+  const handleSelectCurrency = () => console.log("open currency selector");
+  const handleLogoClick = () => navigate("/");
+
+  // Role helpers
+  const isEmployee = user?.role === "employee";
+  const isAdmin = user?.role === "admin";
+
+  // If an employee/admin hits "/", redirect them to the employee portal
+  const homeElement = isEmployee || isAdmin ? (
+    <Navigate to="/employee-portal" replace />
+  ) : (
+    <HomePage />
+  );
+
+  // Protect the employee portal route: only employee/admin allowed
+  const portalElement = isEmployee || isAdmin ? (
+    <div className="p-8 text-xl">Employee portal</div>
+  ) : (
+    <Navigate to="/" replace />
+  );
+
+  return (
+    <>
+      {/* Global header shared by all pages */}
+      <Header
+        currency="USD"
+        user={user}
+        cartCount={3}
+        wishlistCount={1}
+        onSearch={handleSearch}
+        onLogout={handleLogout}
+        onSignIn={handleSignIn}
+        onGoToCart={() => console.log("go to cart")}
+        onGoToWishlist={() => console.log("go to wishlist")}
+        onGoToPortal={handlePortal}
+        onSelectCurrency={handleSelectCurrency}
+        onLogoClick={handleLogoClick}
+      />
+
+      {/* Application routes */}
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        {/* Public home (auto-redirects to portal if employee/admin) */}
+        <Route path="/" element={homeElement} />
+
+        {/* Login: on success, persist session and route by role */}
         <Route
-          path="/employee-portal"
+          path="/login"
           element={
-            <RequireAuth>
-              <RequireRole roles={["employee", "admin"]}>
-                <div className="p-8 text-xl">Employee portal</div>
-              </RequireRole>
-            </RequireAuth>
+            <LoginPage
+              onSuccess={(u) => {
+                // Persist a very simple mock session
+                const role = u.role ?? "shopper";
+                localStorage.setItem("token", "t");
+                localStorage.setItem("username", u.name);
+                localStorage.setItem("role", role);
+                setUser({ ...u, role });
+
+                // Route depending on the role
+                if (role === "employee" || role === "admin") {
+                  navigate("/employee-portal", { replace: true });
+                } else {
+                  navigate("/", { replace: true });
+                }
+              }}
+            />
           }
         />
+
+        {/* Register (Create account) */}
+        <Route path="/register" element={<RegisterPage />} />
+
+        {/* Forgot password / Recovery flow */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* Protected employee/admin area */}
+        <Route path="/employee-portal" element={portalElement} />
+
+        {/* Fallback: any unknown path goes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AuthProvider>
+    </>
   );
 }
