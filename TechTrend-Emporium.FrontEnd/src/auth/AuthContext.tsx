@@ -10,6 +10,7 @@ export type AuthContextType = {
   login: (email: string, password: string, remember?: boolean) => Promise<{ redirectTo?: string } | void>;
   register: (email: string, username: string, password: string, remember?: boolean) => Promise<{ redirectTo?: string } | void>;
   logout: () => Promise<void>;
+  rehydrate: () => void;
   isLoading: boolean;
   error: string | null;
 };
@@ -29,11 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
+  const rehydrate = () => {
     // Try localStorage first (remember me). If not present, fall back to sessionStorage.
     const storedToken = localStorage.getItem("jwt_token") ?? sessionStorage.getItem("jwt_token");
     const storedUser = localStorage.getItem("user") ?? sessionStorage.getItem("user");
-  // storage check when provider mounts
 
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -44,15 +44,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: parsed.id ?? parsed._id ?? parsed.email ?? "",
           name: parsed.name ?? parsed.username ?? parsed.email ?? "",
           email: parsed.email ?? undefined,
-          role: parsed.role ?? undefined,        // ⬅️ ahora es Role | undefined
+          role: parsed.role ?? undefined,
           avatarUrl: parsed.avatarUrl ?? undefined,
         };
         setUser(normalized);
-  // do not expose debug handles in production
       } catch {
         setUser(null);
       }
     }
+  };
+
+  useEffect(() => {
+    rehydrate();
   }, []);
 
   const login = async (email: string, password: string, remember = true) => {
@@ -166,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, error }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, rehydrate, isLoading, error }}>
       {children}
     </AuthContext.Provider>
   );
