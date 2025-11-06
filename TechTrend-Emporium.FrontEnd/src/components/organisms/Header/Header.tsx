@@ -49,6 +49,13 @@ export default function Header({
   const location = useLocation();
 
   const hideNativeCart = location.pathname.startsWith("/employee-portal");
+  const roleStr = (user?.role ?? "").toString().toLowerCase();
+  const isStaff = roleStr === "employee" || roleStr === "admin" || roleStr === "superadmin";
+  const showShopperIcons = !isStaff && !hideNativeCart;
+  // Remove shopper-only navigation entries for staff roles
+  const effectiveNavItems = isStaff
+    ? navItems.filter(i => i.key !== "shop-list" && i.key !== "wishlist")
+    : navItems;
 
   const handleSignIn = () => navigate("/login");
   const handleSignUp = () => navigate("/register");
@@ -65,13 +72,18 @@ export default function Header({
           {/* Left: brand */}
           <BrandLogo onClick={onLogoClick} />
           {/* Center: nav */}
-          <NavMenu items={navItems} />
+          <NavMenu items={effectiveNavItems} />
           {/* Right: controls */}
           <div className="flex items-center gap-3 md:gap-4">
             <ActionIcon name="search" ariaLabel="Search" onClick={() => setShowSearch(v => !v)} />
-            {!hideNativeCart && (
+            {showShopperIcons && (
               <>
-                <ActionIcon name="heart" ariaLabel="Wishlist" onClick={onGoToWishlist} count={wishlistCount} />
+                <ActionIcon
+                  name="heart"
+                  ariaLabel="Wishlist"
+                  onClick={onGoToWishlist}
+                  count={wishlistCount}
+                />
                 <ActionIcon name="cart" ariaLabel="Cart" onClick={onGoToCart} count={cartCount} />
               </>
             )}
@@ -117,7 +129,7 @@ export default function Header({
         <div id="mobile-menu" className={`md:hidden ${mobileOpen ? "block" : "hidden"}`}>
           <nav aria-label="Mobile" className="border-t border-neutral-200 py-3">
             <ul className="flex flex-col gap-2 text-sm">
-              {navItems.map(n => (
+              {effectiveNavItems.map(n => (
                 <li key={n.key}>
                   <a href={n.href} className="block rounded-md px-2 py-2 font-medium hover:bg-neutral-100">
                     {n.label}

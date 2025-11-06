@@ -22,6 +22,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 // F-205
 import { FavoritesProvider, useFavorites } from "./context/FavoritesContext";
 import FavoritesPage from "./pages/FavoritesPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 
 /** Bridge so Header can read wishlist count from Favorites context */
 function HeaderWithFavorites({
@@ -144,8 +145,8 @@ export default function App() {
         {/* F-205 */}
         <Route path="/favorites" element={<FavoritesPage />} />
 
-        {/* Placeholder product detail */}
-        <Route path="/product/:id" element={<div className="p-6">TODO: Product detail</div>} />
+  {/* Product detail */}
+  <Route path="/product/:id" element={<ProductDetailPage />} />
 
         {/* F-204: shopper-only */}
         <Route
