@@ -26,7 +26,8 @@ export default function HomePage() {
     (async () => {
       try {
         const apiCategories = await CategoryService.getCategories();
-        const mapped = (apiCategories || []).map((cat: any) => ({
+        const list = Array.isArray(apiCategories) ? apiCategories : [];
+        const mapped = list.map((cat: any) => ({
           id: cat.id,
           name: cat.name,
           imageUrl: `https://picsum.photos/400/300?${cat.slug || cat.name.toLowerCase().replace(/\s+/g, "-")}`,
@@ -42,7 +43,8 @@ export default function HomePage() {
     (async () => {
       try {
         const apiProducts = await ProductService.getLatestProducts();
-        const mapped = (apiProducts || []).map((p: any) => ({
+        const list = Array.isArray(apiProducts) ? apiProducts : [];
+        const mapped = list.map((p: any) => ({
           id: p.id,
           name: p.title,
           imageUrl: p.image || `https://picsum.photos/seed/${p.id}/800/600`,
@@ -59,7 +61,8 @@ export default function HomePage() {
     (async () => {
       try {
         const apiProducts = await ProductService.getBestProducts();
-        const mapped = (apiProducts || []).map((p: any) => ({
+        const list = Array.isArray(apiProducts) ? apiProducts : [];
+        const mapped = list.map((p: any) => ({
           id: p.id,
           name: p.title,
           imageUrl: p.image || `https://picsum.photos/seed/${p.id}/800/600`,

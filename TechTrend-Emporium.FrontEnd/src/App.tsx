@@ -1,9 +1,8 @@
 // src/App.tsx
-import { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./components/organisms/Header";
-import RequireAuth from "./auth/RequireAuth";
-import RequireRole from "./auth/RequireRole";
+// import RequireAuth from "./auth/RequireAuth";
+// import RequireRole from "./auth/RequireRole";
 import { useAuth } from "./auth/AuthContext";
 import type { UserLike } from "./components/molecules/UserDropdown";
 
@@ -60,19 +59,19 @@ function HeaderWithFavorites({
 export default function App() {
   
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation(); // not needed after removing rehydrate effect
 
   // Use the central AuthContext for user/session state (no legacy local state)
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser } = useAuth();
 
   // Map AuthContext user shape to the local UserLike expected by Header
   const user: UserLike | null = authUser
     ? (() => {
-        const raw = (authUser.role ?? "").toString().toLowerCase();
-        // Map backend roles like 'SuperAdmin' or 'Employee' to our smaller set: shopper/employee/admin
-        let mapped: UserLike["role"] = "shopper";
-        if (raw.includes("Employee")) mapped = "employee";
-        else if (raw.includes("SuperAdmin") || raw.includes("admin")) mapped = "admin";
+  const raw = (authUser.role ?? "").toString().toLowerCase();
+  // Map backend roles like 'superadmin' or 'employee' (case-insensitive) to shopper/employee/admin
+  let mapped: UserLike["role"] = "shopper";
+  if (raw.includes("employee")) mapped = "employee";
+  else if (raw.includes("superadmin") || raw.includes("admin")) mapped = "admin";
 
         return {
           id: authUser.id,
@@ -83,26 +82,18 @@ export default function App() {
       })()
     : null;
 
-  /** Rehydrate on each route change (e.g., after Login writes localStorage) */
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const name = (localStorage.getItem("username") || undefined) as string | undefined;
-    const role = localStorage.getItem("role") as UserLike["role"] | null;
-
-  }, [location.pathname]);
+  // NOTE: AuthProvider already rehydrates from storage on mount.
+  // Removed looping rehydrate effect that caused infinite renders.
 
   // Header handlers
   const handleSearch = (q: string) => console.log("search:", q);
 
   // Clear session via AuthContext and go home
-  const handleLogout = async () => {
-    await logout();
-    navigate("/", { replace: true });
-  };
-
-  // Open login/register flows
-  const handleSignIn = () => navigate("/login");
-  const handlePortal = () => navigate("/employee-portal");
+  // Logout handler kept if needed by Header in future (currently not passed)
+  // const handleLogout = async () => {
+  //   await logout();
+  //   navigate("/", { replace: true });
+  // };
 
   // Simple stubs for header UI interactions
   const handleSelectCurrency = () => console.log("open currency selector");
@@ -116,7 +107,7 @@ export default function App() {
   const isShopper = !!user && user.role === "shopper";
 
   // Protect the employee portal route: only employee/admin allowed
-  const portalElement = isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />;
+  // const portalElement = isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />; // unused
 
   return (
     <FavoritesProvider>
