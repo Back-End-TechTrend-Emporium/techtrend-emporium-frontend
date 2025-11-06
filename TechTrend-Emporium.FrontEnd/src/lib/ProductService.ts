@@ -24,6 +24,24 @@ export type Product = {
   status?: ProductStatus;
 };
 
+/**
+ * Detailed product shape as returned by GET api/product/{id}
+ */
+export type ProductDetail = {
+  id: string;
+  title: string;
+  price: number;
+  description: string;
+  category: string;
+  image: string;
+  rating: ProductRating;
+  inventoryTotal: number;
+  inventoryAvailable: number;
+  isLowStock: boolean;
+  isOutOfStock: boolean;
+  isInStock: boolean;
+};
+
 /* ---------------- New types for F-502 ---------------- */
 
 /** Business state for product moderation. */
@@ -149,6 +167,14 @@ export const ProductService = {
       `${BASE}/products?page=1&pageSize=3&sortBy=Rating&sortDir=Desc`
     );
     return response.data.items;
+  },
+
+  /**
+   * Gets details from endpoint api/product/{id}
+   */
+  getById: async (id: string): Promise<ProductDetail> => {
+    const res = await http.get<ProductDetail>(`/api/product/${encodeURIComponent(id)}`);
+    return res.data;
   },
 
   /* ---------------- New methods for F-502 ---------------- */
