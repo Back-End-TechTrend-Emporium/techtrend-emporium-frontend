@@ -8,6 +8,7 @@ import Input from "../components/atoms/Input";
 import Button from "../components/atoms/Button";
 import { CategoryService } from "../lib/CategoryService";
 import type { CategoryDraft } from "../lib/CategoryService";
+import { useAuth } from "../auth/AuthContext";
 
 /** Simple validation: only the name is required (min 2 chars) */
 const schema = z.object({
@@ -23,16 +24,21 @@ export default function CreateCategoryPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitOk, setSubmitOk] = useState<string | null>(null);
 
-  // read session role + a simple user id
-  const role = (localStorage.getItem("role") || "") as "employee" | "admin" | "";
-  const userId = localStorage.getItem("userId") || "u1";
+  // Read role/id from central AuthContext
+  const { user } = useAuth();
+  const rawRole = (user?.role ?? "").toString().toLowerCase();
+  const isEmployee = rawRole.includes("employee");
+  const isAdmin = rawRole.includes("superadmin") || rawRole.includes("admin");
+  const role: "employee" | "admin" | "" = isAdmin ? "admin" : (isEmployee ? "employee" : "");
+  const userId = user?.id || "u1";
 
-  /** Guard: only employee/admin is allowed here */
+  /** Guard: only employee/admin is allowed here. Wait until user is known. */
   useEffect(() => {
+    if (!user) return;
     if (role !== "employee" && role !== "admin") {
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     }
-  }, [navigate, role]);
+  }, [navigate, role, user]);
 
   // RHF
   const {

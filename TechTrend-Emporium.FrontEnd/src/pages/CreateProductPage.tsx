@@ -1,6 +1,7 @@
 // src/pages/CreateProductPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,22 +31,33 @@ export default function CreateProductPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitOk, setSubmitOk] = useState<string | null>(null);
 
-  // Read role and a simple user id placeholder
-  const role = (localStorage.getItem("role") || "") as "employee" | "admin" | "";
-  const userId = localStorage.getItem("userId") || "u1";
+  // Use central auth context instead of ad-hoc localStorage values
+  const { user } = useAuth();
+  const rawRole = (user?.role ?? "").toString().toLowerCase();
+  const isEmployee = rawRole.includes("employee");
+  const isAdmin = rawRole.includes("superadmin") || rawRole.includes("admin");
+  const role: "employee" | "admin" | "" = isAdmin ? "admin" : (isEmployee ? "employee" : "");
+  const userId = user?.id || "u1";
 
-  /** Guard: only employee/admin can access this page */
+  /** Guard: only employee/admin can access this page. Defer until user known. */
   useEffect(() => {
+    if (!user) return; // wait for AuthContext
     if (role !== "employee" && role !== "admin") {
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     }
-  }, [navigate, role]);
+  }, [navigate, role, user]);
 
   /** Load categories (must exist for a valid product) */
   useEffect(() => {
     (async () => {
-      const list = await CategoryService.getCategories();
-      setCategories(list.map((c: any) => ({ id: String(c.id), name: c.name })));
+      try {
+        const list = await CategoryService.getCategories();
+        const arr = Array.isArray(list) ? list : [];
+        setCategories(arr.map((c: any) => ({ id: String(c.id), name: c.name })));
+      } catch (err) {
+        console.error("Error loading categories", err);
+        setCategories([]);
+      }
     })();
   }, []);
 
@@ -59,7 +71,7 @@ export default function CreateProductPage() {
 
   // Options for the <select/>
   const categoryOptions = useMemo(
-    () => categories.map((c) => ({ value: c.id, label: c.name })),
+    () => (Array.isArray(categories) ? categories : []).map((c) => ({ value: c.id, label: c.name })),
     [categories]
   );
 
@@ -86,7 +98,7 @@ export default function CreateProductPage() {
     }
 
     // 3) Status by role: admin -> approved, employee -> unapproved
-    const status: "approved" | "unapproved" = role === "admin" ? "approved" : "unapproved";
+  const status: "approved" | "unapproved" = role === "admin" ? "approved" : "unapproved";
 
     // 4) Build draft to match your ProductService contract (uses `image`, not `imageUrl`)
     const draft: ProductDraft = {
