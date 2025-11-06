@@ -1,10 +1,6 @@
-import Header from "../components/organisms/Header/Header";
-
 export default function EmployeePortal() {
   return (
     <div>
-      {/* Header will hide cart/wishlist automatically on this route */}
-      <Header />
       <main className="max-w-7xl mx-auto p-8">
         <h1 className="text-2xl font-bold mb-4">Employee Portal</h1>
         <p className="mb-6">Welcome to the employee portal. Use the navigation on the left to access admin tools.</p>

@@ -20,6 +20,10 @@ export type HeaderProps = {
   onGoToCart?: () => void;
   onGoToWishlist?: () => void;
   onLogoClick?: () => void;
+  // legacy/optional callbacks used by App.tsx
+  onSignIn?: () => void;
+  onLogout?: () => void;
+  onGoToPortal?: () => void;
 };
 
 const defaultNav: NavItem[] = [

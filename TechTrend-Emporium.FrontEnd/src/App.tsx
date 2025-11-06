@@ -1,7 +1,10 @@
 // src/App.tsx
-import { useEffect, useState } from "react";
+// react imports
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./components/organisms/Header";
+import RequireAuth from "./auth/RequireAuth";
+import RequireRole from "./auth/RequireRole";
+import { useAuth } from "./auth/AuthContext";
 import type { UserLike } from "./components/molecules/UserDropdown";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -10,27 +13,36 @@ import RegisterPage from "./pages/RegisterPage"; // Register screen
 import EmployeePortal from "./pages/EmployeePortal";
 
 export default function App() {
-  // Global authenticated user (null = guest)
-  const [user, setUser] = useState<UserLike | null>(null);
-
   // Programmatic navigation helper from react-router
   const navigate = useNavigate();
 
-  // Rehydrate session from localStorage on first mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const name = (localStorage.getItem("username") || undefined) as string | undefined;
-    const role = localStorage.getItem("role") as UserLike["role"] | null;
-    if (token && name && role) setUser({ id: "u1", name, role });
-  }, []);
+  // Use the central AuthContext for user/session state (no legacy local state)
+  const { user: authUser, logout } = useAuth();
+
+  // Map AuthContext user shape to the local UserLike expected by Header
+  const user: UserLike | null = authUser
+    ? (() => {
+        const raw = (authUser.role ?? "").toString().toLowerCase();
+        // Map backend roles like 'SuperAdmin' or 'Employee' to our smaller set: shopper/employee/admin
+        let mapped: UserLike["role"] = "shopper";
+        if (raw.includes("Employee")) mapped = "employee";
+        else if (raw.includes("SuperAdmin") || raw.includes("admin")) mapped = "admin";
+
+        return {
+          id: authUser.id,
+          name: authUser.name,
+          avatarUrl: authUser.avatarUrl,
+          role: mapped,
+        };
+      })()
+    : null;
 
   // Header callbacks (search and account/cart actions, mocked for now)
   const handleSearch = (q: string) => console.log("search:", q);
 
-  // Clear local session and go home
-  const handleLogout = () => {
-    localStorage.clear();
-    setUser(null);
+  // Clear session via AuthContext and go home
+  const handleLogout = async () => {
+    await logout();
     navigate("/", { replace: true });
   };
 
@@ -54,11 +66,7 @@ export default function App() {
   );
 
   // Protect the employee portal route: only employee/admin allowed
-  const portalElement = isEmployee || isAdmin ? (
-    <div className="p-8 text-xl">Employee portal</div>
-  ) : (
-    <Navigate to="/" replace />
-  );
+  const portalElement = isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />;
 
   return (
     <>
@@ -83,17 +91,8 @@ export default function App() {
         {/* Public home (auto-redirects to portal if employee/admin) */}
         <Route path="/" element={homeElement} />
 
-        {/* Login: on success, persist session and route by role */}
-        <Route
-          path="/login"
-          element={
-            <RequireAuth>
-              <RequireRole roles={["Employee", "SuperAdmin"]}>
-                <EmployeePortal />
-              </RequireRole>
-            </RequireAuth>
-          }
-        />
+        {/* Login screen */}
+        <Route path="/login" element={<LoginPage />} />
                 {/* Register (Create account) */}
         <Route path="/register" element={<RegisterPage />} />
 

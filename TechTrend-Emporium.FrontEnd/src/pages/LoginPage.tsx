@@ -30,8 +30,13 @@ const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginForm) => {
     try {
       const res = await login(data.email, data.password, remember);
-      const redirect = res && (res as any).redirectTo ? (res as any).redirectTo : from || "/";
-      navigate(redirect, { replace: true });
+      // Only navigate when login succeeded and the login function returned a result.
+      // If login failed, AuthContext sets `error` and we must stay on the login page
+      // so the user can see the error message.
+      if (res) {
+        const redirect = (res as any).redirectTo ?? from ?? "/";
+        navigate(redirect, { replace: true });
+      }
     } catch (err) {
       // login error handled by AuthContext; no additional UI action here
     }

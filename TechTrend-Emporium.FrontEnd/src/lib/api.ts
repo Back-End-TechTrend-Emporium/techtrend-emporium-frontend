@@ -1,34 +1,44 @@
-// Lightweight API helper that injects JWT from localStorage into Authorization header.
-// Use this with react-query's `useQuery`/`useMutation` by passing it as the fetcher.
+import { http } from "./http";
 
-export type FetchOptions = Omit<RequestInit, "headers"> & {
+export type FetchOptions = {
+  method?: string;
   headers?: Record<string, string>;
+  body?: any;
 };
 
-// If VITE_API_BASE_URL is provided, use it; otherwise keep requests relative so the dev-server proxy can forward them.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || "";
-
+/**
+ * Compatibility wrapper so existing code that used `authFetch` keeps working, but
+ * uses the axios singleton under the hood. Returns response.data and throws a
+ * normalized Error with `status` and `body` properties on failures.
+ */
 export async function authFetch<T = any>(input: string, init?: FetchOptions): Promise<T> {
-  // If API_BASE is set, prefix it. If not, keep relative paths so Vite proxy can be used in dev.
-  const url = input.startsWith("/") ? (API_BASE ? `${API_BASE}${input}` : input) : input;
-  const token = localStorage.getItem("jwt_token");
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(init?.headers ?? {}),
-  };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const url = input;
+  try {
+    const method = (init?.method ?? "GET").toLowerCase();
+    const config: any = { url, method };
 
-  const res = await fetch(url, { method: init?.method ?? "GET", headers, body: init?.body });
-  const text = await res.text();
-  const contentType = res.headers.get("content-type") || "";
+    if (init?.headers) config.headers = init.headers;
+    if (init?.body !== undefined) {
+      // If body is a JSON string (previous behavior), try to parse it, otherwise send as-is.
+      if (typeof init.body === "string") {
+        try {
+          config.data = JSON.parse(init.body);
+        } catch {
+          config.data = init.body;
+        }
+      } else {
+        config.data = init.body;
+      }
+    }
 
-  if (!res.ok) {
-    const err: any = new Error(text || res.statusText || `HTTP error ${res.status}`);
-    err.status = res.status;
-    err.body = text;
-    throw err;
+    const response = await http.request<T>(config);
+    return response.data as T;
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const body = err?.response?.data ?? err?.message;
+    const e: any = new Error(body?.message ?? body ?? err?.message ?? "HTTP error");
+    e.status = status;
+    e.body = body;
+    throw e;
   }
-
-  if (contentType.includes("application/json")) return JSON.parse(text) as T;
-  return text as unknown as T;
 }
