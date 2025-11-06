@@ -13,8 +13,8 @@ export type User = {
 export type AuthContextType = {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<{ redirectTo?: string } | void>;
+  register: (email: string, username: string, password: string, remember?: boolean) => Promise<{ redirectTo?: string } | void>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -36,12 +36,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("jwt_token");
-    const storedUser = localStorage.getItem("user");
+    // Try localStorage first (remember me). If not present, fall back to sessionStorage.
+    const storedToken = localStorage.getItem("jwt_token") ?? sessionStorage.getItem("jwt_token");
+    const storedUser = localStorage.getItem("user") ?? sessionStorage.getItem("user");
+  // storage check when provider mounts
+
     if (storedToken && storedUser) {
       setToken(storedToken);
       try {
-        const parsed = JSON.parse(storedUser);
+        const parsed = JSON.parse(storedUser as string);
         // normalize stored user shape
         const normalized = {
           id: parsed.id ?? parsed._id ?? parsed.email ?? "",
@@ -51,13 +54,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatarUrl: parsed.avatarUrl ?? undefined,
         } as User;
         setUser(normalized);
+  // do not expose debug handles in production
       } catch {
         setUser(null);
       }
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, remember = true) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -65,20 +69,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
+      // received response from backend
       const token = data.token;
-      const parsed = data.user ?? {};
+      // backend may return user info either as `data.user` or flattened at top-level
+      const src = (data && (data.user ?? data)) ?? {};
       const normalized: User = {
-        id: parsed.id ?? parsed._id ?? parsed.email ?? "",
-        name: parsed.name ?? parsed.username ?? parsed.email ?? "",
-        email: parsed.email ?? undefined,
-        role: parsed.role ?? undefined,
-        avatarUrl: parsed.avatarUrl ?? undefined,
+        id: src.id ?? src._id ?? src.email ?? src.username ?? "",
+        name: src.name ?? src.username ?? src.email ?? "",
+        email: src.email ?? undefined,
+        role: src.role ?? undefined,
+        avatarUrl: src.avatarUrl ?? undefined,
       };
       setToken(token);
       setUser(normalized);
-      localStorage.setItem("jwt_token", token);
-      localStorage.setItem("user", JSON.stringify(normalized));
+    // do not expose debug handles in production
+      // store token/user according to remember flag
+      if (remember) {
+        localStorage.setItem("jwt_token", token);
+        localStorage.setItem("user", JSON.stringify(normalized));
+          // stored to localStorage
+      } else {
+        sessionStorage.setItem("jwt_token", token);
+        sessionStorage.setItem("user", JSON.stringify(normalized));
+          // stored to sessionStorage
+      }
       queryClient.clear();
+
+      // determine redirect: roles 'SuperAdmin' or 'Employee' go to employee portal
+      const roleStr = (normalized.role ?? "").toString().toLowerCase();
+      if (roleStr === "superadmin".toLowerCase() || roleStr === "employee".toLowerCase()) {
+        return { redirectTo: "/employee-portal" };
+      }
+      // otherwise undefined -> caller may navigate to previous 'from' or homepage
+      return { redirectTo: undefined };
     } catch (err: any) {
       setError(err?.message ?? "Login failed");
     } finally {
@@ -86,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, username: string, password: string) => {
+  const register = async (email: string, username: string, password: string, remember = true) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -95,19 +118,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, username, password }),
       });
       const token = data.token;
-      const parsed = data.user ?? {};
+      // backend may return user info either as `data.user` or flattened at top-level
+      const src = (data && (data.user ?? data)) ?? {};
       const normalized: User = {
-        id: parsed.id ?? parsed._id ?? parsed.email ?? "",
-        name: parsed.name ?? parsed.username ?? parsed.email ?? "",
-        email: parsed.email ?? undefined,
-        role: parsed.role ?? undefined,
-        avatarUrl: parsed.avatarUrl ?? undefined,
+        id: src.id ?? src._id ?? src.email ?? src.username ?? "",
+        name: src.name ?? src.username ?? src.email ?? "",
+        email: src.email ?? undefined,
+        role: src.role ?? undefined,
+        avatarUrl: src.avatarUrl ?? undefined,
       };
       setToken(token);
       setUser(normalized);
-      localStorage.setItem("jwt_token", token);
-      localStorage.setItem("user", JSON.stringify(normalized));
+      // registration keeps the user remembered by default (same behavior as before)
+      if (remember) {
+        localStorage.setItem("jwt_token", token);
+        localStorage.setItem("user", JSON.stringify(normalized));
+      } else {
+        sessionStorage.setItem("jwt_token", token);
+        sessionStorage.setItem("user", JSON.stringify(normalized));
+      }
       queryClient.clear();
+
+      // determine redirect: roles 'SuperAdmin' or 'Employee' go to employee portal
+      const roleStr = (normalized.role ?? "").toString().toLowerCase();
+      if (roleStr === "superadmin".toLowerCase() || roleStr === "employee".toLowerCase()) {
+        return { redirectTo: "/employee-portal" };
+      }
+      return { redirectTo: undefined };
     } catch (err: any) {
       setError(err?.message ?? "Registration failed");
     } finally {
@@ -125,8 +162,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setToken(null);
     setUser(null);
+    // clear both storages to be safe
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("jwt_token");
+    sessionStorage.removeItem("user");
     queryClient.clear();
     setIsLoading(false);
   };

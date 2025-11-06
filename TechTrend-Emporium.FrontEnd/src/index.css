@@ -16,3 +16,15 @@
 
 @layer components {}
 @layer utilities {}
+
+/* Hide native password reveal/clear controls so only our custom icon is visible. */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* WebKit browsers (Chrome, Safari) - hide built-in reveal/credentials buttons */
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
