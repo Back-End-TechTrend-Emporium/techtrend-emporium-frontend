@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Icon from "../atoms/Icon";
 import Avatar from "../atoms/Avatar";
 
@@ -11,11 +12,11 @@ export type UserLike = { id: string; name: string; avatarUrl?: string; role?: Ro
 export function UserDropdown({
   user,
   onLogout,
-  onGoToPortal, // NEW
+  onGoToPortal,
 }: {
   user: UserLike;
   onLogout?: () => void;
-  onGoToPortal?: () => void; // NEW
+  onGoToPortal?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const isEmployee = user.role === "employee" || user.role === "admin";
@@ -34,7 +35,6 @@ export function UserDropdown({
         ) : (
           <Icon name="user" className="h-5 w-5" />
         )}
-        {/* Show username always (useful for Employee/Admin) */}
         <span className="inline-block font-medium text-neutral-800" title={user.name}>
           {user.name}
         </span>
@@ -51,12 +51,14 @@ export function UserDropdown({
             {user.role ? <span className="ml-1 text-neutral-500">({user.role})</span> : null}
           </div>
 
-          {/* NEW: Employee portal entry (only employee/admin) */}
           {isEmployee && (
             <button
               role="menuitem"
               className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100"
-              onClick={onGoToPortal}
+              onClick={() => {
+                setOpen(false);
+                onGoToPortal?.();
+              }}
             >
               Employee portal
             </button>
@@ -67,7 +69,10 @@ export function UserDropdown({
           <button
             role="menuitem"
             className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100"
-            onClick={onLogout}
+            onClick={() => {
+              setOpen(false);
+              onLogout?.();
+            }}
           >
             Logout
           </button>
@@ -100,14 +105,41 @@ export function GuestDropdown({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg"
         >
-          <button role="menuitem" className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100" onClick={onSignIn}>
+          <button
+            role="menuitem"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100"
+            onClick={() => {
+              setOpen(false);
+              onSignIn?.();
+            }}
+          >
             Sign in
           </button>
-          <button role="menuitem" className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100" onClick={onSignUp}>
+
+          <button
+            role="menuitem"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-100"
+            onClick={() => {
+              setOpen(false);
+              onSignUp?.();
+            }}
+          >
             Create account
           </button>
+
+          <div className="my-1 h-px bg-neutral-200" />
+
+          {/* NEW: Forgot password directo */}
+          <Link
+            to="/forgot-password"
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-100"
+            onClick={() => setOpen(false)}
+          >
+            Forgot password
+          </Link>
         </div>
       )}
     </div>

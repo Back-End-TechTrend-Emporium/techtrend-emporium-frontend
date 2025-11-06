@@ -1,0 +1,5 @@
+# CODEOWNERS
+# Este archivo define quiénes pueden aprobar cambios en el repositorio.
+# Tanto maintainers como developers pueden aprobar todo el repo.
+
+* @maintainers @developers
