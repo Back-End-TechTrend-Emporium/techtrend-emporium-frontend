@@ -1,30 +1,24 @@
 // src/App.tsx
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import Header from "./components/organisms/Header";
-// import RequireAuth from "./auth/RequireAuth";
-// import RequireRole from "./auth/RequireRole";
 import { useAuth } from "./auth/AuthContext";
 import type { UserLike } from "./components/molecules/UserDropdown";
 
-// Pages
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import RegisterPage from "./pages/RegisterPage"; // Register screen
+import RegisterPage from "./pages/RegisterPage";
 import EmployeePortal from "./pages/EmployeePortal";
 import CreateProductPage from "./pages/CreateProductPage";
 import CreateCategoryPage from "./pages/CreateCategoryPage";
 
-// F-204
 import MyOrdersPage from "./pages/MyOrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 
-// F-205
 import { FavoritesProvider, useFavorites } from "./context/FavoritesContext";
 import FavoritesPage from "./pages/FavoritesPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 
-/** Bridge so Header can read wishlist count from Favorites context */
 function HeaderWithFavorites({
   user,
   onSearch,
@@ -56,23 +50,18 @@ function HeaderWithFavorites({
   );
 }
 
-
 export default function App() {
-  
   const navigate = useNavigate();
-  // const location = useLocation(); // not needed after removing rehydrate effect
+  const location = useLocation();
 
-  // Use the central AuthContext for user/session state (no legacy local state)
   const { user: authUser } = useAuth();
 
-  // Map AuthContext user shape to the local UserLike expected by Header
   const user: UserLike | null = authUser
     ? (() => {
-  const raw = (authUser.role ?? "").toString().toLowerCase();
-  // Map backend roles like 'superadmin' or 'employee' (case-insensitive) to shopper/employee/admin
-  let mapped: UserLike["role"] = "shopper";
-  if (raw.includes("employee")) mapped = "employee";
-  else if (raw.includes("superadmin") || raw.includes("admin")) mapped = "admin";
+        const raw = (authUser.role ?? "").toString().toLowerCase();
+        let mapped: UserLike["role"] = "shopper";
+        if (raw.includes("employee")) mapped = "employee";
+        else if (raw.includes("superadmin") || raw.includes("admin")) mapped = "admin";
 
         return {
           id: authUser.id,
@@ -83,52 +72,40 @@ export default function App() {
       })()
     : null;
 
-  // NOTE: AuthProvider already rehydrates from storage on mount.
-  // Removed looping rehydrate effect that caused infinite renders.
-
-  // Header handlers
   const handleSearch = (q: string) => console.log("search:", q);
-
-  // Clear session via AuthContext and go home
-  // Logout handler kept if needed by Header in future (currently not passed)
-  // const handleLogout = async () => {
-  //   await logout();
-  //   navigate("/", { replace: true });
-  // };
-
-  // Simple stubs for header UI interactions
   const handleSelectCurrency = () => console.log("open currency selector");
   const handleLogoClick = () => navigate("/");
   const goCart = () => navigate("/my-orders");
   const goWishlist = () => navigate("/favorites");
 
-  // Role helpers
   const isEmployee = !!user && user.role === "employee";
   const isAdmin = !!user && user.role === "admin";
   const isShopper = !!user && user.role === "shopper";
 
-  // Protect the employee portal route: only employee/admin allowed
-  // const portalElement = isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />; // unused
+  const showHeader = location.pathname !== "/login" && location.pathname !== "/forgot-password";
 
   return (
     <FavoritesProvider>
-      <HeaderWithFavorites
-        user={user}
-        onSearch={handleSearch}
-        onGoToCart={goCart}
-        onGoToWishlist={goWishlist}
-        onSelectCurrency={handleSelectCurrency}
-        onLogoClick={handleLogoClick}
-      />
+      {showHeader && (
+        <>
+          <style>{`header button[aria-controls="mobile-menu"]{display:none !important;}`}</style>
+          <HeaderWithFavorites
+            user={user}
+            onSearch={handleSearch}
+            onGoToCart={goCart}
+            onGoToWishlist={goWishlist}
+            onSelectCurrency={handleSelectCurrency}
+            onLogoClick={handleLogoClick}
+          />
+        </>
+      )}
 
       <Routes>
-        {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-        {/* Protected: employee/admin */}
         <Route
           path="/employee-portal"
           element={isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />}
@@ -142,13 +119,14 @@ export default function App() {
           element={isEmployee || isAdmin ? <CreateCategoryPage /> : <Navigate to="/" replace />}
         />
 
-        {/* F-205 */}
         <Route path="/favorites" element={<FavoritesPage />} />
+
+
 
   {/* Product detail */}
   <Route path="/product/:id" element={<ProductDetailPage />} />
 
-        {/* F-204: shopper-only */}
+
         <Route
           path="/my-orders"
           element={
@@ -162,7 +140,6 @@ export default function App() {
           }
         />
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </FavoritesProvider>

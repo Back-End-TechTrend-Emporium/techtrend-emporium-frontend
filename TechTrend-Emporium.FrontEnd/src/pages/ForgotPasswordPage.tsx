@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && question && answer) {
-      setStep("reset"); // simula verificación correcta
+      setStep("reset");
       setError("");
     } else {
       setError("Please fill in all fields.");
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="flex w-full max-w-5xl flex-col md:flex-row md:items-center md:justify-between rounded-xl bg-white shadow p-6 md:p-10">
         {/* Left: Form */}
         <div className="md:w-1/2">
@@ -163,14 +163,13 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Right: Image (solo desktop) */}
-         <div className="hidden md:flex md:w-1/2 justify-center">
+        <div className="hidden md:flex md:w-1/2 justify-center">
           <img
-          src="/TTE.png"           // ✅ archivo en public/
-          alt="Tech Trend Emporium"
-         className="max-w-sm"
-         />
-         </div>
-
+            src="/TTE.png"
+            alt="Tech Trend Emporium"
+            className="max-w-sm w-full"
+          />
+        </div>
       </div>
     </div>
   );
