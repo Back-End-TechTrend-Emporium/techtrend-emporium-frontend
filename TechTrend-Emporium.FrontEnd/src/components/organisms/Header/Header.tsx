@@ -7,7 +7,7 @@ import SearchBar from "../../molecules/SearchBar";
 import { GuestDropdown, UserDropdown, type UserLike } from "../../molecules/UserDropdown";
 import Button from "../../atoms/Button";
 import { useAuth } from "../../../auth/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 export type HeaderProps = {
   currency?: string;
@@ -27,8 +27,8 @@ export type HeaderProps = {
 };
 
 const defaultNav: NavItem[] = [
-  { key: "shop-list", label: "Shop List", href: "#shop" },
-  { key: "wishlist", label: "Wishlist", href: "#wishlist" },
+  { key: "shop-list", label: "Shop List", href: "/my-orders" },
+  { key: "wishlist", label: "Wishlist", href: "/favorites" },
 ];
 
 export default function Header({
@@ -131,9 +131,9 @@ export default function Header({
             <ul className="flex flex-col gap-2 text-sm">
               {effectiveNavItems.map(n => (
                 <li key={n.key}>
-                  <a href={n.href} className="block rounded-md px-2 py-2 font-medium hover:bg-neutral-100">
+                  <Link to={n.href} className="block rounded-md px-2 py-2 font-medium hover:bg-neutral-100">
                     {n.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

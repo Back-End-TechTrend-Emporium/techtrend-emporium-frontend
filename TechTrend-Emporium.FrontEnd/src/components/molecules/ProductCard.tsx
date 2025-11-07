@@ -26,7 +26,15 @@ export default function ProductCard({ product }: { product: ProductLike }) {
         aria-label={`Go to ${product.name} details`}
       >
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              const fallback = `https://picsum.photos/seed/${product.id}/800/600`;
+              if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+            }}
+          />
         ) : (
           <div className="h-full w-full grid place-items-center text-gray-500">No image</div>
         )}

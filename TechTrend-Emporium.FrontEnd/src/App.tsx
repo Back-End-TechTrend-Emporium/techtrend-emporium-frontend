@@ -99,7 +99,7 @@ export default function App() {
   // Simple stubs for header UI interactions
   const handleSelectCurrency = () => console.log("open currency selector");
   const handleLogoClick = () => navigate("/");
-  const goCart = () => console.log("go to cart");
+  const goCart = () => navigate("/my-orders");
   const goWishlist = () => navigate("/favorites");
 
   // Role helpers

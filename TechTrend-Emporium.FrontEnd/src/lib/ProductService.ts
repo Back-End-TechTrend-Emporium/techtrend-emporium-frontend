@@ -148,6 +148,13 @@ export type PagedProductsResponse = {
 };
 
 export const ProductService = {
+  /**
+   * Obtener todos los productos aprobados
+   */
+  getApprovedProducts: async (): Promise<ProductDetail[]> => {
+    const res = await http.get<ProductDetail[]>(`/api/product/approved`);
+    return Array.isArray(res.data) ? res.data : [];
+  },
   getProducts: async (page = 1, pageSize = 12): Promise<PagedProductsResponse> => {
     const response = await http.get<PagedProductsResponse>(
       `${BASE}/products?page=${page}&pageSize=${pageSize}`
