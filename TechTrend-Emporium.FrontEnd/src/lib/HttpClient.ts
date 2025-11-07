@@ -6,7 +6,9 @@ export class HttpClient {
 
   private constructor() {
     const rawBase = (import.meta.env.VITE_API_BASE_URL as string) || "";
-    const base = rawBase.replace(/\/+$/, "") || undefined; // remove trailing slashes
+    // In development, use relative URLs so Vite proxy can intercept them
+    // In production, use the absolute baseURL
+    const base = import.meta.env.DEV ? undefined : (rawBase.replace(/\/+$/, "") || undefined);
 
     this.client = axios.create({
       baseURL: base,

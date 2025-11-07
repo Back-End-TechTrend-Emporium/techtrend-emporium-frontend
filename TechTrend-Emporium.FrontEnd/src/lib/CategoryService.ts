@@ -1,6 +1,6 @@
 import { http } from "./http";
 
-const BASE = "/Test";
+const BASE = "/api/test";
 
 export type CategoryCreator = {
   id: string;

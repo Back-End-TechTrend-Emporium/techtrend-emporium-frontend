@@ -1,6 +1,6 @@
 import { http } from "./http";
 
-const BASE = "/Test";
+const BASE = "/api/test";
 
 export type User = { id: number; email: string; name: string };
 export type UpdateUserRequest = Partial<Pick<User, "name" | "email">>;
