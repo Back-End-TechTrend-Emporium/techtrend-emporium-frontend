@@ -100,7 +100,7 @@ export default function Header({
             {/* Mobile menu */}
             <button
               type="button"
-              className="inline-flex items-center rounded-md border border-neutral-200 px-2 py-1 text-sm md:hidden focus:outline-none focus:ring-2 focus:ring-black/20"
+              className="hidden md:hidden inline-flex items-center rounded-md border border-neutral-200 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
               onClick={() => setMobileOpen(v => !v)}
