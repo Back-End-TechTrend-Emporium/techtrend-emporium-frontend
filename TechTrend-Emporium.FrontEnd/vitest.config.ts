@@ -8,6 +8,16 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    pool: 'vmThreads',
+    server: {
+      deps: {
+        inline: [
+          "react-router",
+          "react-router-dom",
+          "react-router/dom"
+        ]
+      }
+    }
   },
   resolve: {
     alias: {

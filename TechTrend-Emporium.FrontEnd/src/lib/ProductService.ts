@@ -1,6 +1,6 @@
 import { http } from "./http";
 
-const BASE = "/store";
+const BASE = "/api/store";
 
 export type ProductRating = {
   rate: number;
@@ -15,6 +15,10 @@ export type Product = {
   image: string;
   description: string;
   rating: ProductRating;
+  inventory?: number;
+  createdBy?: string;
+  createdAt?: string;
+  approved?: boolean;
 };
 
 export type PagedProductsResponse = {
@@ -47,4 +51,14 @@ export const ProductService = {
     );
     return response.data.items;
   },
+  updateProduct: async (id: string, payload: Partial<Product>, approved?: boolean) => {
+    const url = `${BASE}/products/${id}${typeof approved === 'boolean' ? `?approved=${approved}` : ''}`;
+    const res = await http.put(url, payload as any);
+    return res.data;
+  },
+  deleteProduct: async (id: string, approved?: boolean) => {
+    const url = `${BASE}/products/${id}${typeof approved === 'boolean' ? `?approved=${approved}` : ''}`;
+    const res = await http.delete(url);
+    return res.data;
+  }
 };

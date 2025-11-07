@@ -2,15 +2,16 @@
 // react imports
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Header from "./components/organisms/Header";
-import RequireAuth from "./auth/RequireAuth";
-import RequireRole from "./auth/RequireRole";
 import { useAuth } from "./auth/AuthContext";
+import RequireRole from "./auth/RequireRole";
 import type { UserLike } from "./components/molecules/UserDropdown";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import RegisterPage from "./pages/RegisterPage"; // Register screen
 import EmployeePortal from "./pages/EmployeePortal";
+import ProductsAdminList from "./pages/ProductsAdminList";
+import CategoriesAdminList from "./pages/CategoriesAdminList";
 
 export default function App() {
   // Programmatic navigation helper from react-router
@@ -66,7 +67,11 @@ export default function App() {
   );
 
   // Protect the employee portal route: only employee/admin allowed
-  const portalElement = isEmployee || isAdmin ? <EmployeePortal /> : <Navigate to="/" replace />;
+  const portalElement = (
+    <RequireRole roles={["employee", "admin"]}>
+      <EmployeePortal />
+    </RequireRole>
+  );
 
   return (
     <>
@@ -101,6 +106,22 @@ export default function App() {
 
         {/* Protected employee/admin area */}
         <Route path="/employee-portal" element={portalElement} />
+        <Route
+          path="/employee-portal/products"
+          element={
+            <RequireRole roles={["employee", "admin"]}>
+              <ProductsAdminList />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/employee-portal/categories"
+          element={
+            <RequireRole roles={["employee", "admin"]}>
+              <CategoriesAdminList />
+            </RequireRole>
+          }
+        />
 
         {/* Fallback: any unknown path goes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

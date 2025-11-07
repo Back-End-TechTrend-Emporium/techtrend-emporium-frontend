@@ -21,15 +21,41 @@ export class HttpClient {
     // are reflected without needing to recreate the axios instance.
     this.client.interceptors.request.use((config) => {
       try {
-        const token = localStorage.getItem("jwt_token");
+        // Try both localStorage and sessionStorage (AuthProvider may store token in either)
+        const token = localStorage.getItem("jwt_token") ?? sessionStorage.getItem("jwt_token");
         if (token) {
           config.headers = { ...(config.headers || {}), Authorization: `Bearer ${token}` } as any;
         }
       } catch (e) {
-        // reading localStorage may fail in some edge cases; ignore and continue
+        // reading storage may fail in some edge cases; ignore and continue
       }
       return config;
     });
+
+    // Response interceptor: if server returns 401, clear stored session and redirect to login
+    this.client.interceptors.response.use(
+      (r) => r,
+      (err) => {
+        try {
+          const status = err?.response?.status;
+          if (status === 401) {
+            try {
+              localStorage.removeItem("jwt_token");
+              localStorage.removeItem("user");
+              sessionStorage.removeItem("jwt_token");
+              sessionStorage.removeItem("user");
+            } catch {}
+            // redirect to login page so user can re-authenticate
+            if (typeof window !== "undefined") {
+              window.location.href = "/login";
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+        return Promise.reject(err);
+      }
+    );
   }
 
   static get instance(): AxiosInstance {

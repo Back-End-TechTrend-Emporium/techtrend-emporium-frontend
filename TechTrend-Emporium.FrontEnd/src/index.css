@@ -7,6 +7,12 @@
   html, body, #root {
     height: 100%;
   }
+  /* Ensure mobile/desktop browsers do not unexpectedly scale text */
+  html,
+  :host {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     margin: 0;
     background-color: #ffffff; /* fondo blanco normal */
@@ -27,4 +33,12 @@ input[type="password"]::-ms-clear {
 input[type="password"]::-webkit-textfield-decoration-container,
 input[type="password"]::-webkit-credentials-auto-fill-button {
   display: none !important;
+}
+
+/* sonner toast swipe area: prevent text selection on swipe for Safari and others */
+[data-sonner-toast][data-swiped=true] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

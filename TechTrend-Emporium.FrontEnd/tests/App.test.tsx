@@ -7,6 +7,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from '../src/App'
 import { AuthProvider } from '../src/auth/AuthContext'
 
+// Mock react-router-dom
+vi.mock('react-router-dom', () => ({
+  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Routes: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Route: () => null,
+  Navigate: () => null,
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/' }),
+  useParams: () => ({}),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+}))
+
 describe('App', () => {
   beforeEach(() => {
     Object.defineProperty(window, 'localStorage', {

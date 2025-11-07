@@ -17,12 +17,28 @@ describe('HttpClient', () => {
     // Reset singleton
     HttpClient['_instance'] = null
 
-    // Create mock axios instance
+    // Mock localStorage
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(() => null),
+        removeItem: vi.fn(() => null),
+        clear: vi.fn(() => null),
+      },
+      writable: true,
+    })
+
+    // Create mock axios instance with interceptors
     const mockAxiosInstance = {
       defaults: {
         baseURL: 'https://localhost:7101/api',
         headers: { "Content-Type": "application/json" },
         timeout: 10000
+      },
+      interceptors: {
+        request: {
+          use: vi.fn()
+        }
       }
     }
 
