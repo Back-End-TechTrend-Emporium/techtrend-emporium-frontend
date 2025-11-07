@@ -1,19 +1,52 @@
+import { useEffect, useState } from "react";
 import ProductCard, { type ProductLike } from "../components/molecules/ProductCard";
 import { useFavorites } from "../context/FavoritesContext";
-
-function lookupProducts(ids: (string | number)[]): ProductLike[] {
-  // Si no tienes API para buscar por id, usamos fallback con Picsum
-  return ids.map((id) => ({
-    id,
-    name: `Product ${id}`,
-    price: 0,
-    imageUrl: `https://picsum.photos/seed/${id}/800/600`,
-  }));
-}
+import { ProductService, type ProductDetail } from "../lib/ProductService";
 
 export default function FavoritesPage() {
   const { items, clear } = useFavorites();
-  const products = lookupProducts(items);
+  const [products, setProducts] = useState<ProductLike[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!items.length) {
+        setProducts([]);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        // Charging details in parallel; if anyone fails, we skip it
+        const results = await Promise.all(
+          items.map(async (id) => {
+            try {
+              const p: ProductDetail = await ProductService.getById(String(id));
+              return {
+                id: p.id,
+                name: p.title,
+                price: p.price,
+                imageUrl: p.image || `https://picsum.photos/seed/${p.id}/800/600`,
+              } satisfies ProductLike;
+            } catch {
+              return null;
+            }
+          })
+        );
+        if (active) setProducts(results.filter(Boolean) as ProductLike[]);
+      } catch (e: any) {
+        if (active) setError(e?.message || "Error loading favorites");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [items]);
+
   const hasItems = products.length > 0;
 
   return (
@@ -27,13 +60,21 @@ export default function FavoritesPage() {
         )}
       </div>
 
-      {!hasItems ? (
+      {loading ? (
+        <div className="rounded-xl border p-10 text-center bg-white">
+          <p className="text-lg font-medium">Loading your favorites…</p>
+        </div>
+      ) : !hasItems ? (
         <div className="rounded-xl border p-10 text-center bg-white">
           <p className="text-lg font-medium">Your favorites list is empty.</p>
           <p className="text-gray-600 mt-1">Browse products and tap the heart to add them here.</p>
           <a href="/" className="inline-block mt-6 px-4 py-2 rounded-lg border bg-white hover:bg-gray-50">
             Go to Home
           </a>
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border p-10 text-center bg-white text-red-600">
+          <p className="font-medium">{error}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -80,6 +80,10 @@ export default function ProductDetailPage() {
                 className="h-full w-full object-cover"
                 loading="lazy"
                 decoding="async"
+                onError={(e) => {
+                  const fallback = `https://picsum.photos/seed/${product.id}/1200/900`;
+                  if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                }}
               />
             ) : (
               <div className="grid place-items-center h-full text-gray-500">Sin imagen</div>

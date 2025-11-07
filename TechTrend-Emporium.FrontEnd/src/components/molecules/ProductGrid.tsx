@@ -32,7 +32,8 @@ export default function ProductGrid({
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((p) => {
-            const img = p.imageUrl || `https://picsum.photos/seed/${p.id}/800/600`;
+            const fallback = `https://picsum.photos/seed/${p.id}/800/600`;
+            const img = p.imageUrl || fallback;
             const fav = isFavorite(p.id);
 
             return (
@@ -43,7 +44,19 @@ export default function ProductGrid({
                   className="block w-full aspect-[4/3] rounded-lg bg-gray-100 overflow-hidden"
                   aria-label={`Go to ${p.name} details`}
                 >
-                  <img src={img} alt={p.name} className="h-full w-full object-cover" loading="lazy" decoding="async" />
+                  <img
+                    src={img}
+                    alt={p.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      // Fallback if remote URL is blocked by CORS/ORB or 404
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      }
+                    }}
+                  />
                 </button>
 
                 {/* Corazón */}
