@@ -17,6 +17,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 
 import { FavoritesProvider, useFavorites } from "./context/FavoritesContext";
 import FavoritesPage from "./pages/FavoritesPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
 
 function HeaderWithFavorites({
   user,
@@ -74,7 +75,7 @@ export default function App() {
   const handleSearch = (q: string) => console.log("search:", q);
   const handleSelectCurrency = () => console.log("open currency selector");
   const handleLogoClick = () => navigate("/");
-  const goCart = () => console.log("go to cart");
+  const goCart = () => navigate("/my-orders");
   const goWishlist = () => navigate("/favorites");
 
   const isEmployee = !!user && user.role === "employee";
@@ -120,7 +121,11 @@ export default function App() {
 
         <Route path="/favorites" element={<FavoritesPage />} />
 
-        <Route path="/product/:id" element={<div className="p-6">TODO: Product detail</div>} />
+
+
+  {/* Product detail */}
+  <Route path="/product/:id" element={<ProductDetailPage />} />
+
 
         <Route
           path="/my-orders"

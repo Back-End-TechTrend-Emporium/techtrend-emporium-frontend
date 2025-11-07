@@ -4,7 +4,7 @@ import LandingPage from "../templates/LandingPage";
 import type { Category } from "../components/molecules/CategoryGrid";
 import type { Product } from "../components/molecules/ProductGrid";
 import { CategoryService } from "../lib/CategoryService";
-import { ProductService } from "../lib/ProductService";
+import { ProductService, type ProductDetail } from "../lib/ProductService";
 
 const isDev = import.meta.env.MODE === "development";
 
@@ -20,6 +20,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [latest, setLatest] = useState<Product[]>([]);
   const [best, setBest] = useState<Product[]>([]);
+  const [banner, setBanner] = useState<string>("https://picsum.photos/id/1069/1600/500");
 
   useEffect(() => {
     // Categories
@@ -39,46 +40,54 @@ export default function HomePage() {
       }
     })();
 
-    // Latest
+    // Approved products for cards
     (async () => {
       try {
-        const apiProducts = await ProductService.getLatestProducts();
-        const list = Array.isArray(apiProducts) ? apiProducts : [];
-        const mapped = list.map((p: any) => ({
+        const approved: ProductDetail[] = await ProductService.getApprovedProducts();
+        const mapped: Product[] = (approved ?? []).map((p) => ({
           id: p.id,
           name: p.title,
           imageUrl: p.image || `https://picsum.photos/seed/${p.id}/800/600`,
           price: p.price,
         }));
-        setLatest(mapped.length > 0 ? mapped : (isDev ? DEV_FALLBACK : []));
-      } catch (err) {
-        console.error("Error fetching latest products:", err);
-        setLatest(isDev ? DEV_FALLBACK : []);
-      }
-    })();
+        const allApproved = mapped.length > 0 ? mapped : (isDev ? DEV_FALLBACK : []);
+  setBest(allApproved);
+  // Latest: same dataset from last approved to oldest
+  const latestList = [...allApproved].reverse().slice(0, 8);
+  setLatest(latestList);
 
-    // Best sellers
-    (async () => {
-      try {
-        const apiProducts = await ProductService.getBestProducts();
-        const list = Array.isArray(apiProducts) ? apiProducts : [];
-        const mapped = list.map((p: any) => ({
-          id: p.id,
-          name: p.title,
-          imageUrl: p.image || `https://picsum.photos/seed/${p.id}/800/600`,
-          price: p.price,
-        }));
-        setBest(mapped.length > 0 ? mapped : (isDev ? DEV_FALLBACK : []));
+        // Banner: use the image of the first approved product
+        const firstImg = (approved?.[0]?.image as string | undefined) || allApproved?.[0]?.imageUrl;
+        if (firstImg) setBanner(firstImg);
+
+        // Fallback of categories derived from approved products if API fails
+        if (!Array.isArray(allApproved) || allApproved.length === 0) return;
+        setCategories((prev) => {
+          if (prev.length) return prev; // maintain if already set
+          // Derivate unique categories with the first image found
+          const uniqueNames = Array.from(new Set((approved || []).map((p) => p.category)));
+          const derived: Category[] = uniqueNames.map((name) => {
+            const first = (approved || []).find((p) => p.category === name);
+            return {
+              id: name,
+              name,
+              imageUrl: (first?.image as string | undefined) || `https://picsum.photos/seed/${name}/400/300`,
+            } as Category;
+          });
+          return derived;
+        });
       } catch (err) {
         console.error("Error fetching best products:", err);
         setBest(isDev ? DEV_FALLBACK : []);
+        setLatest(isDev ? DEV_FALLBACK : []);
+        setBanner("https://picsum.photos/id/1069/1600/500");
       }
     })();
   }, []);
 
   return (
     <LandingPage
-      bannerSource="https://picsum.photos/id/1069/1600/500"
+      bannerSource={banner}
       categories={categories}
       latest={latest}
       bestSellers={best}
